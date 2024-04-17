@@ -11,65 +11,76 @@ date: 2024-05-XX
 
 Dear users,
 
-As we are always working hard to improve your experience with AiiDA, we would like to share with you some of the recent changes that have been implemented in the code to improve user friendliness.
+As we are always working hard to improve your experience with AiiDA, we would like to share with you some of the
+changes to improve user friendliness that have been implemented since the major release 2.0.
 
 ## Service-less installation
 
-While `PostgreSQL` as database backend and `RabbitMQ` as message broker were initially chosen with high-performance and high-throughput capabilities in mind, we have found over the years that their setup can pose a significant initial hurdle for new users. We estimate that about half of the issues reported on Discourse are related to the setup of these services. In addition, the extra performance gains they provide become really only noticeable for the workloads that power users put on the system.
+While `PostgreSQL` as database backend and `RabbitMQ` as message broker were initially chosen with high-performance and
+high-throughput capabilities in mind, we have found over the years that their setup can pose a significant initial
+hurdle for new users - We estimate that about half of the issues reported on [Discourse](aiida.discourse.group/) are
+related to the setup of these services.
 
-Recent changes to the code base have now made it possible to run AiiDA entirely without external services, effectively shrinking the commands required to obtain a running setup to just two:
+Therefore, recent changes to the code base have now made it possible to run AiiDA entirely without them [^1]. For one, this is
+achieved by providing `SQLite` as an alternative database backend [^2]. In addition, the new command:
+
+```shell
+verdi profile setup
+```
+
+can now be used to create new profiles with this database backend, for example:
+
+```shell
+verdi profile setup core.sqlite_dos -n --profile aiida_rocks --email aiida_rocks@mail.com
+```
+
+We also have made the use of `RabbitMQ` optional and now provide the turn-key solution `verdi presto`, with which you
+can set up a running fully service-less AiiDA profile with just two commands:
 
 ```shell=
 pip install aiida-core
 verdi init/blitz/presto
 ```
 
-### Database
+So get your feet wet!
 
-This is achieved by providing `SQLite` as alternative database backend. As it does not need to run as an external service no additional setup steps are required.
+## Softer transition from file-system to database
 
-A [dedicated section](https://aiida.readthedocs.io/projects/aiida-core/en/v2.5.0/topics/storage.html) was added to the documentation to give a short overview of the available database backends, and when to use which.
-
-### Message Broker
-
-Similarly, the use of `RabbitMQ` was made optional.
-
-### Profile setup
-
-In addition, we added the `verdi profile setup` command.
-
-Therefore, these two changes allow spinning up a working AiiDA instance as simple as:
-
-```shell
-pip install aiida-core
-verdi init
-```
-
-no additional services required.
-
-## Adaptation from typical file-system
-
-Another hurdle that often complicates the adaptation of AiiDA is the conceptual difference between the hierarchical file-system approach most people are familiar with, and the database-driven data organization implemented in AiiDA.
+Another often reported hurdle is the conceptual difference between the typical file-system approach most of us are
+familiar with, and the database-driven data organization implemented in AiiDA.
 
 While the raw files are of course available, accessing them is not straightforward:
-- The local file repository depends on the fairly complex [`disk-objectstore`](https://github.com/aiidateam/disk-objectstore), while
-- On the remote computer, files are stored in a hierarchical structure with folder names based on the universally unique identifiers (UUIDs) of the corresponding nodes.
 
-The second point here nicely illustrates the issue - with high perforamnec in mind, the data storage logic was constructed to be *machine-readable* rather than *human-readable*.
+- The local file repository typically depends on the fairly complex [`disk-objectstore`](https://github.com/aiidateam/disk-objectstore), while
+- On the remote computer, files are stored in a hierarchical structure with folder names based on the universally unique
+  identifiers (UUIDs) of the corresponding AiiDA `Nodes`.
 
-As such, a new user is automatically fairly locked into the database-driven approach taken by AiiDA and has to effectively use the `verdi` CLI interface or the Python API, such as the `QueryBuilder` to access the data.
+The second point here nicely illustrates the issue - again with high performance in mind, the data storage logic was
+constructed to be _machine-readable_ rather than _human-readable_. Unfortunately, this locks a new user into the database-driven approach taken by AiiDA, effectively having to use the `verdi`
+CLI interface or the AiiDA Python API to access their data.
 
-For that reason, we have added two functionalities that ease the adaptation from the typical file system approach.
-
-### Converting individual processes to file hierarchies
-
-First, we have added the
+To ease the transition, we have added the functionality to dump `processes` and even the whole AiiDA archive to disk in
+a sensible directory structure:
 
 ```shell
 verdi process dump <pk>
+verdi archive dump <pk> (to be implemented)
 ```
 
-command that allows the dumping of `CalcJob`s and `WorkChain`s in a directory tree with meaningful directory names. For instance, for a QuantumEspresso `pw.x` calculation, the corresponding directory tree takes has the form:
+The results of dumping a `pw.x` calculation, as well as a more complex band structure workflow using Quantum ESPRESSO are showcased in the following table:
+
+<!-- prettier-ignore -->
+<!-- Taken from: https://gist.github.com/panoply/176101828af8393adc821e49578ac588 -->
+<table style="table-layout: fixed; width: 100%">
+  <thead>
+    <tr>
+      <th width="500px"> `tree` on a dumped `CalcJob` </th>
+      <th width="500px"> `tree -d ` on a dumped `WorkChain`  </th>
+    </tr>
+  </thead>
+  <tbody>
+  <tr width="600px">
+      <td style="word-break:break-all;">
 
 ```shell
 dump-PwCalculation-42
@@ -86,14 +97,18 @@ dump-PwCalculation-42
    └── pseudos
       └── Si
          └── Si.pbesol-n-rrkjus_psl.1.0.0.UPF
+
+
+
+
+
 ```
 
-As you can see, the main QuantumEspresso input file, internally named `aiida.in`, as well as the submission script `_aiidasubmit.sh` are contained in the `raw_inputs` directory. The relevant output files generated by the calculation are written to the `raw_inputs`, while additional files, such as the Silicon pseudopotential is contained in the `node_inputs`. A README is also generated for each dump, which contains a more in-depth explanation of the output.
-
-The command works accordingly for more complex workflows. For instance, for an exemplary `PwBandsWorkChain` that calculates a material's band structure using `QuantumEspresso`, the following directory structure is obtained:
+</td>
+<td>
 
 ```shell
-dump-PwBandsWorkChain-462
+dump-PwBandsWorkChain-42
 ├── 01-relax-PwRelaxWorkChain
 │  ├── 01-PwBaseWorkChain
 │  │  └── 01-PwCalculation
@@ -110,48 +125,47 @@ dump-PwBandsWorkChain-462
 │           └── pseudos
 │              └── Si
 ├── 02-scf-PwBaseWorkChain
+│  ├── ...
 ...
 ```
 
-Here, the generated directory tree mirrors the logical sequence of steps run in the workflow, and output files are again contained in the folders for each calculation.
+</td>
+</tr>
 
-The functionality allows you to explore all files involved in the execution of a multip-step workflow in the same way as a for a traditional directory tree, using the typical shell tools like `grep`, `sed`, and `awk`.
+  </tbody>
+</table>
 
-### Mirroring an AiiDA archive to disk
+In the dumped directory tree, you can explore all files involved in the execution of an AiiDA workflow with the shell
+tools we all know and love. Happy grepping!
 
-...to be implemented...
+## New QueryBuilder Syntax
 
-In a similar way as the dumping of individual process outlined in the previous section, we have further added the functionality to mirror a collection of (process) files to disk. The command is aptly named:
+- Add example from Edan
 
-```shell
-verdi archive mirror <pk>
-```
+## Automatic serialization of base data types
 
-It creates a directory tree in which all workflows, calculations, and structures are written to disk.
-
-This differs from the already existing `verdi archive export`, which exports a collection of AiiDA nodes, that is, the `SQL` database and the file repository, such that it can then be imported by another AiiDA instance. In that case, the resulting `.aiida` archive is not an easily explorable directory tree.
-
-...
-
-## Writing workflows
-
-### WorkTree, SubmissionController, Other? -> Future?
-
-### Automatic serialization of base Python types
-
+-
 
 ## Outlook
 
-- Clean-up of setup commands, however, backwards-incompatible, so must wait for v3
+-
 
 ---
 
-## Miscellaneous
+## Relevant PRs
 
-- New QueryBuilder API by Edan
-- Live calculation job monitoring?
-
-## Relevant PRs (for own reference)
+For the more tech-savy among us, here are the relevant PRs of the changes outlined in this blog post:
 
 - Add the `SqliteDosStorage` storage backend [[702f88788]](https://github.com/aiidateam/aiida-core/commit/702f8878829b8e2a65d81623cc2238eb40791bc6)
 - CLI: Add the command `verdi profile setup` [[351021164]](https://github.com/aiidateam/aiida-core/commit/351021164d00aa3a2a78b5b6e43e8a87a8553151)
+
+## Footnotes
+
+[^1]:
+    It should be kept in mind, however, that these two changes come at the cost of lower performance, and should not
+    be used in production. Rather, they are mainly intended for new users to get a running AiiDA instance quickly to be able
+    to play around with the tool.
+
+[^2]:
+    A [dedicated section](https://aiida.readthedocs.io/projects/aiida-core/en/v2.5.0/topics/storage.html) was added to
+    the documentation to give a short overview of the available database backends, and when to use which.
