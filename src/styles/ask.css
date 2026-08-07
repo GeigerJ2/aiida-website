@@ -1,0 +1,118 @@
+/* "Ask the docs" search box. Uses the global design tokens from global.css
+   (with literal fallbacks) so it follows light/dark like the rest of the site. */
+
+.ask-page {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+}
+
+.ask-page h1 {
+  font-family: var(--font-base, inherit);
+  color: var(--color-text, #1a1a1a);
+}
+
+.ask-lede {
+  color: var(--color-text-muted, #57606a);
+  margin-bottom: 2rem;
+  max-width: 46rem;
+}
+
+.ask-root {
+  max-width: 46rem;
+}
+
+.ask-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ask-input {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  font-family: var(--font-base, inherit);
+  font-size: 1rem;
+  color: var(--color-text, #1a1a1a);
+  background: var(--color-bg, #ffffff);
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 8px;
+}
+
+.ask-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #0096de);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary, #0096de) 25%, transparent);
+}
+
+.ask-button {
+  padding: 0.7rem 1.25rem;
+  font-family: var(--font-base, inherit);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--color-primary, #0096de);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ask-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ask-message {
+  color: var(--color-text-muted, #57606a);
+}
+
+.ask-message--error {
+  color: var(--color-accent-orange, #e0662b);
+}
+
+.ask-results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ask-result {
+  padding: 1rem 1.25rem;
+  background: var(--color-bg-subtle, rgba(0, 150, 222, 0.04));
+  border: 1px solid var(--color-border, #d0d7de);
+  border-radius: 10px;
+}
+
+.ask-result-title {
+  display: inline-block;
+  font-weight: 600;
+  color: var(--color-primary, #0096de);
+  text-decoration: none;
+  margin-bottom: 0.4rem;
+}
+
+.ask-result-title:hover {
+  text-decoration: underline;
+}
+
+.ask-result-text {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-text, #1a1a1a);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ask-result-corpus {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #57606a);
+}

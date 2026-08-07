@@ -1,0 +1,20 @@
+---
+import '../styles/ask.css';
+import Layout from '../layouts/Layout.astro';
+import AskDocs from '../components/AskDocs';
+---
+
+<Layout
+  title="Ask the docs"
+  description="Semantic search over the AiiDA documentation."
+>
+  <main class="ask-page">
+    <h1>Ask the AiiDA documentation</h1>
+    <p class="ask-lede">
+      Type a question and get the most relevant documentation sections, with
+      links to the full pages. This is a semantic search over the docs, no
+      account needed.
+    </p>
+    <AskDocs client:load />
+  </main>
+</Layout>
